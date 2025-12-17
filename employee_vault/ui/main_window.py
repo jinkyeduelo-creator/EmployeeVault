@@ -3267,6 +3267,14 @@ class MainWindow(QMainWindow):
                 theme_list.setCurrentItem(item)
         
         layout.addWidget(theme_list)
+
+        # Reduced motion toggle
+        reduce_motion_chk = QCheckBox("Reduce motion (disable heavy animations)")
+        reduce_motion_chk.setChecked(
+            bool(self.anim_manager and self.anim_manager.performance_mode == self.anim_manager.REDUCED_MOTION)
+        )
+        reduce_motion_chk.setToolTip("Disables heavy animations for accessibility/performance.")
+        layout.addWidget(reduce_motion_chk)
         
         # Preview label
         preview_label = QLabel("<i>Click a theme to preview its colors</i>")
@@ -3297,11 +3305,15 @@ class MainWindow(QMainWindow):
                 
                 # Save theme preference
                 try:
-                    with open(THEME_PREFERENCE_FILE, 'w') as f:
-                        f.write(new_theme)
-                except (IOError, OSError):
-                    # Failed to save theme preference
-                    pass
+                    save_theme_preference(new_theme)
+                except Exception as e:
+                    logging.warning(f"Could not save theme preference: {e}")
+                # Apply reduced motion preference
+                if self.anim_manager:
+                    if reduce_motion_chk.isChecked():
+                        self.anim_manager.set_performance_mode(self.anim_manager.REDUCED_MOTION)
+                    else:
+                        self.anim_manager.set_performance_mode(self.anim_manager.BALANCED)
                 
                 # Ask for confirmation and restart
                 reply = QMessageBox.question(
@@ -3521,10 +3533,13 @@ class MainWindow(QMainWindow):
             self.sidebar_hover_expanded = True
             # Animate to expanded width
             self.sidebar_animation = QPropertyAnimation(self.sidebar, b"maximumWidth", self)
-            self.sidebar_animation.setDuration(200)
+            if self.anim_manager:
+                self.sidebar_animation.setDuration(self.anim_manager.get_theme_duration("transition"))
+                self.sidebar_animation.setEasingCurve(self.anim_manager.get_theme_easing())
+            else:
+                self.sidebar_animation.setDuration(200)
             self.sidebar_animation.setStartValue(self.sidebar.width())
             self.sidebar_animation.setEndValue(self.sidebar_expanded_width)
-            self.sidebar_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
             self.sidebar_animation.start()
             self.sidebar.setFixedWidth(self.sidebar_expanded_width)
 
@@ -3566,10 +3581,13 @@ class MainWindow(QMainWindow):
             self.sidebar_hover_expanded = False
             # Animate back to collapsed width
             self.sidebar_animation = QPropertyAnimation(self.sidebar, b"maximumWidth", self)
-            self.sidebar_animation.setDuration(200)
+            if self.anim_manager:
+                self.sidebar_animation.setDuration(self.anim_manager.get_theme_duration("transition"))
+                self.sidebar_animation.setEasingCurve(self.anim_manager.get_theme_easing())
+            else:
+                self.sidebar_animation.setDuration(200)
             self.sidebar_animation.setStartValue(self.sidebar.width())
             self.sidebar_animation.setEndValue(self.sidebar_collapsed_width)
-            self.sidebar_animation.setEasingCurve(QEasingCurve.Type.InCubic)
             self.sidebar_animation.start()
             self.sidebar.setFixedWidth(self.sidebar_collapsed_width)
 
