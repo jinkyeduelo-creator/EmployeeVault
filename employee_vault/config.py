@@ -1483,13 +1483,13 @@ def get_modern_stylesheet(theme_name="default", is_light_mode=False) -> str:
         color: {c['text_primary']};
     }}
 
-    /* ====== MODERN INPUT FIELDS - iOS FROSTED GLASS STYLE ====== */
+    /* ====== MODERN INPUT FIELDS - FROSTED / SOFT ====== */
     QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox, QDateEdit {{
         background: {'rgba(255, 255, 255, 0.08)' if not is_light_mode else c['surface']};
         color: {'white' if not is_light_mode else c['text_primary']};
-        border: {'1.5px solid rgba(255, 255, 255, 0.2)' if not is_light_mode else '1px solid ' + c['border']};
-        border-radius: 20px;
-        padding: 10px 16px;
+        border: {'1px solid rgba(255, 255, 255, 0.18)' if not is_light_mode else '1px solid ' + c['border']};
+        border-radius: 14px;
+        padding: 10px 14px;
         min-height: 44px;
         font-size: 13px;
         selection-background-color: rgba({primary_rgb[0]}, {primary_rgb[1]}, {primary_rgb[2]}, 0.5);
@@ -1498,12 +1498,13 @@ def get_modern_stylesheet(theme_name="default", is_light_mode=False) -> str:
 
     QLineEdit:hover, QTextEdit:hover, QPlainTextEdit:hover, QSpinBox:hover, QDoubleSpinBox:hover, QComboBox:hover, QDateEdit:hover {{
         background: {'rgba(255, 255, 255, 0.12)' if not is_light_mode else c['surface_variant']};
-        border: {'1.5px solid rgba(255, 255, 255, 0.3)' if not is_light_mode else '2px solid ' + c['primary']};
+        border: 1px solid {c['primary']};
     }}
 
     QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QDateEdit:focus {{
-        border: 2px solid rgba({primary_rgb[0]}, {primary_rgb[1]}, {primary_rgb[2]}, 0.6);
+        border: 2px solid {c['primary']};
         background: {'rgba(' + str(primary_rgb[0]) + ', ' + str(primary_rgb[1]) + ', ' + str(primary_rgb[2]) + ', 0.15)' if not is_light_mode else c['surface_variant']};
+        color: {c['text_primary']};
         outline: none;
     }}
 
@@ -1513,7 +1514,7 @@ def get_modern_stylesheet(theme_name="default", is_light_mode=False) -> str:
 
     QLineEdit:disabled, QTextEdit:disabled, QPlainTextEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled, QComboBox:disabled, QDateEdit:disabled {{
         background: {'rgba(255, 255, 255, 0.03)' if not is_light_mode else c['surface_variant']};
-        border: {'1.5px solid rgba(255, 255, 255, 0.1)' if not is_light_mode else '1px solid ' + c['border']};
+        border: {'1px solid rgba(255, 255, 255, 0.1)' if not is_light_mode else '1px solid ' + c['border']};
         color: {'rgba(255, 255, 255, 0.3)' if not is_light_mode else c['text_secondary']};
     }}
 
@@ -1528,20 +1529,30 @@ def get_modern_stylesheet(theme_name="default", is_light_mode=False) -> str:
         background: rgba({primary_rgb[0]}, {primary_rgb[1]}, {primary_rgb[2]}, 0.3);
     }}
 
+    QComboBox QAbstractItemView {{
+        background: {c['surface']};
+        color: {c['text_primary']};
+        border: 1px solid {c['border']};
+        selection-background-color: rgba({primary_rgb[0]}, {primary_rgb[1]}, {primary_rgb[2]}, 0.2);
+        selection-color: {c['text_primary']};
+        outline: none;
+        padding: 6px;
+    }}
+
     /* ====== MODERN BUTTONS - 22px PILL SHAPE + EFFECTS ====== */
     QPushButton {{
         background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-            stop:0 {'rgba(255, 255, 255, 0.1)' if not is_light_mode else c['primary_light']},
+            stop:0 {'rgba(255, 255, 255, 0.08)' if not is_light_mode else c['primary_light']},
             stop:0.5 {c['primary']},
             stop:1 {c['primary_dark']});
         color: {c['bg_primary']};
-        border: {'none' if is_light_mode else '1px solid rgba(255, 255, 255, 0.15)'};
-        border-top: {'none' if is_light_mode else '1px solid rgba(255, 255, 255, 0.25)'};
-        border-radius: 22px;
-        padding: 10px 24px;
+        border: {'1px solid rgba(255, 255, 255, 0.18)' if not is_light_mode else '1px solid ' + c['border']};
+        border-top: {'1px solid rgba(255, 255, 255, 0.25)' if not is_light_mode else '1px solid ' + c['border']};
+        border-radius: 16px;
+        padding: 10px 18px;
         font-weight: 600;
         font-size: 13px;
-        min-height: 36px;
+        min-height: 40px;
     }}
 
     QPushButton:hover {{
@@ -1552,7 +1563,20 @@ def get_modern_stylesheet(theme_name="default", is_light_mode=False) -> str:
         background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
             stop:0 {c['primary_dark']},
             stop:1 rgba({primary_rgb[0]//2}, {primary_rgb[1]//2}, {primary_rgb[2]//2}, 0.9));
-        border: 1px solid rgba({primary_rgb[0]}, {primary_rgb[1]}, {primary_rgb[2]}, 0.5);
+        border: 1px solid {c['primary_dark']};
+    }}
+
+    QPushButton:focus {{
+        outline: none;
+        border: 2px solid {c['primary']};
+    }}
+
+    QPushButton:checked {{
+        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+            stop:0 {c['primary']},
+            stop:1 {c['primary_dark']});
+        border: 2px solid {c['primary_dark']};
+        color: {c['bg_primary']};
     }}
 
     QPushButton:disabled {{
