@@ -246,6 +246,8 @@ class EmployeesPage(QWidget):
 
         # v4.5.0: Apply all table fixes (cursor + focus rectangle)
         apply_table_fixes(self.table)
+        # Ensure photo avatars render at full size and stay centered
+        self.table.setIconSize(QSize(44, 44))
         
         # Modern hover effects for table rows
         self.table.setStyleSheet("""

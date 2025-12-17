@@ -1033,7 +1033,7 @@ class NeumorphicGradientComboBox(QWidget):
             self.border_anim.stop()
             self._angle = 0.0
 
-        self.glow_anim.stop()
+        # Glow animation removed - no glow on dropdowns
         self._glow_opacity = 0.0
         if self.combo_box.currentIndex() < 0:
             self._animate_label(self._rest_y)
@@ -1048,7 +1048,7 @@ class NeumorphicGradientComboBox(QWidget):
                 if self.border_anim:
                     self.border_anim.start()
 
-            self.glow_anim.start()
+            # Glow animation removed - no glow on dropdowns
 
             if not self._is_focused:
                 self._animate_label(self._float_y)

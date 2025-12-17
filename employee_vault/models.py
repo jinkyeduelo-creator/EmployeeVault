@@ -7,8 +7,8 @@ v4.6.0: Enhanced with lazy photo loading
 import os
 from collections import OrderedDict
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel, QSize, QThread, Signal, QObject, QRunnable, QThreadPool
-from PySide6.QtGui import QColor, QPixmap, QIcon
-from typing import Any, Set
+from PySide6.QtGui import QColor, QPixmap, QIcon, QImage, QPainter, QPainterPath
+from typing import Any, Set, Optional
 
 from employee_vault.config import HEADERS, ALERT_DAYS, contract_days_left, PHOTOS_DIR, get_employee_photos
 
@@ -20,23 +20,32 @@ class PhotoSignals(QObject):
 
 class PhotoLoadRunnable(QRunnable):
     """Phase 1.3: QRunnable for loading photos asynchronously in QThreadPool"""
-    def __init__(self, emp_id: str, photo_path: str, signals: PhotoSignals):
+    def __init__(self, emp_id: str, photo_path: str, signals: PhotoSignals, target_size: int = 40):
         super().__init__()
         self.emp_id = emp_id
         self.photo_path = photo_path
         self.signals = signals
+        self.target_size = target_size
 
     def run(self):
         """Load photo in background thread"""
         try:
-            pixmap = QPixmap(self.photo_path)
-            if not pixmap.isNull():
-                # Scale to thumbnail size
-                thumbnail = pixmap.scaled(32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                self.signals.photo_loaded.emit(self.emp_id, thumbnail)
+            image = QImage(self.photo_path)
+            if image.isNull():
+                self.signals.photo_loaded.emit(self.emp_id, None)
+                return
+
+            # Scale first; circular mask is applied on the UI thread
+            thumbnail = image.scaled(
+                self.target_size,
+                self.target_size,
+                Qt.KeepAspectRatioByExpanding,
+                Qt.SmoothTransformation,
+            )
+            self.signals.photo_loaded.emit(self.emp_id, thumbnail)
         except Exception:
-            # Silently fail if photo can't be loaded
-            pass
+            # Ensure the UI thread can clear loading state even on failure
+            self.signals.photo_loaded.emit(self.emp_id, None)
 
 
 class EmployeesTableModel(QAbstractTableModel):
@@ -44,6 +53,7 @@ class EmployeesTableModel(QAbstractTableModel):
         super().__init__()
         self.data_list=data
         self.search_term = ""  # FEATURE: Search highlighting
+        self._photo_diameter = 40  # Unified avatar sizing
 
         # Phase 1.3: LRU cache with bounded size for photo thumbnails
         self._photo_cache = OrderedDict()  # OrderedDict for LRU eviction
@@ -58,8 +68,7 @@ class EmployeesTableModel(QAbstractTableModel):
         self._photo_signals.photo_loaded.connect(self._on_photo_loaded)
 
         # Create placeholder pixmap for loading state
-        self._placeholder_pixmap = QPixmap(32, 32)
-        self._placeholder_pixmap.fill(QColor(60, 60, 60, 100))
+        self._placeholder_pixmap = self._make_placeholder_pixmap(self._photo_diameter)
 
     def get_hovered_row(self) -> int:
         """Get currently hovered row index"""
@@ -89,6 +98,35 @@ class EmployeesTableModel(QAbstractTableModel):
         """Set the search term for highlighting"""
         self.search_term = term.lower().strip()
         self.layoutChanged.emit()  # Refresh display
+
+    def _make_placeholder_pixmap(self, size: int) -> QPixmap:
+        """Create a circular placeholder avatar"""
+        placeholder = QPixmap(size, size)
+        placeholder.fill(Qt.transparent)
+        painter = QPainter(placeholder)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setBrush(QColor(80, 90, 110, 120))
+        painter.setPen(Qt.NoPen)
+        painter.drawEllipse(0, 0, size, size)
+        painter.end()
+        return placeholder
+
+    def _make_circular_thumbnail(self, pixmap: QPixmap, size: int) -> Optional[QPixmap]:
+        """Crop a pixmap into a circle"""
+        if pixmap is None or pixmap.isNull():
+            return None
+        target = QPixmap(size, size)
+        target.fill(Qt.transparent)
+
+        scaled = pixmap.scaled(size, size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        painter = QPainter(target)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        path = QPainterPath()
+        path.addEllipse(0, 0, size, size)
+        painter.setClipPath(path)
+        painter.drawPixmap(0, 0, scaled)
+        painter.end()
+        return target
 
     def _highlight_text(self, text: str) -> str:
         """Add HTML highlighting to search matches"""
@@ -146,7 +184,10 @@ class EmployeesTableModel(QAbstractTableModel):
             photo_path = self._photo_path_cache[emp_id]
         else:
             # v5.2: Try new folder structure first, then legacy
-            photos = get_employee_photos(emp_id)
+            try:
+                photos = get_employee_photos(emp_id)
+            except Exception:
+                photos = []
             photo_path = photos[0] if photos else None
 
             # Fallback to legacy location
@@ -160,7 +201,7 @@ class EmployeesTableModel(QAbstractTableModel):
 
         if photo_path and os.path.exists(photo_path):
             # Queue async load using QThreadPool
-            runnable = PhotoLoadRunnable(emp_id, photo_path, self._photo_signals)
+            runnable = PhotoLoadRunnable(emp_id, photo_path, self._photo_signals, self._photo_diameter)
             QThreadPool.globalInstance().start(runnable)
         else:
             # No photo found - cache None and stop loading
@@ -170,15 +211,24 @@ class EmployeesTableModel(QAbstractTableModel):
         # Return placeholder immediately
         return self._placeholder_pixmap
 
-    def _on_photo_loaded(self, emp_id: str, thumbnail: QPixmap):
+    def _on_photo_loaded(self, emp_id: str, image_obj):
         """Phase 1.3: Callback when photo is loaded asynchronously"""
         # Evict oldest entry if cache is full
         if len(self._photo_cache) >= self._max_cache_size:
             self._photo_cache.popitem(last=False)  # Remove oldest (FIFO from front)
 
-        # Add to cache
-        self._photo_cache[emp_id] = thumbnail
         self._loading_photos.discard(emp_id)
+
+        pixmap = None
+        if image_obj is not None:
+            if isinstance(image_obj, QImage):
+                pixmap = QPixmap.fromImage(image_obj)
+            elif isinstance(image_obj, QPixmap):
+                pixmap = image_obj
+            pixmap = self._make_circular_thumbnail(pixmap, self._photo_diameter)
+
+        # Add to cache (may be None to signal missing/failed photo)
+        self._photo_cache[emp_id] = pixmap
 
         # Update only the specific row
         for i, emp in enumerate(self.data_list):
@@ -206,7 +256,7 @@ class EmployeesTableModel(QAbstractTableModel):
         if len(self._photo_cache) >= self._max_cache_size:
             self._photo_cache.popitem(last=False)
 
-        self._photo_cache[emp_id] = pixmap
+        self._photo_cache[emp_id] = self._make_circular_thumbnail(pixmap, self._photo_diameter) if pixmap else None
         self._loading_photos.discard(emp_id)
 
         # Find row and emit dataChanged
@@ -233,22 +283,21 @@ class EmployeesTableModel(QAbstractTableModel):
                 thumbnail = self._get_photo_thumbnail(emp_id)
                 if thumbnail:
                     return thumbnail
-                return None
+                return self._placeholder_pixmap
             elif role == Qt.DisplayRole:
-                # Show placeholder text if no photo
-                thumbnail = self._get_photo_thumbnail(emp_id)
-                if thumbnail is None:
-                    return "📷"
+                # Icon-only column; keep text empty for cleaner centering
                 return ""
+            elif role == Qt.DecorationAlignmentRole:
+                return Qt.AlignCenter
             elif role == Qt.TextAlignmentRole:
                 return Qt.AlignCenter
             elif role == Qt.ToolTipRole:
-                thumbnail = self._get_photo_thumbnail(emp_id)
-                if thumbnail is None:
+                photo_path = self._photo_path_cache.get(emp_id)
+                if not photo_path or not os.path.exists(photo_path):
                     return "No photo - click to add"
                 return "Employee photo"
             elif role == Qt.SizeHintRole:
-                return QSize(40, 40)
+                return QSize(self._photo_diameter + 8, self._photo_diameter + 8)
             return None
         
         if role==Qt.ToolTipRole:
@@ -343,11 +392,11 @@ class EmployeesTableModel(QAbstractTableModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role==Qt.DisplayRole and orientation==Qt.Horizontal: return HEADERS[section]
         return super().headerData(section, orientation, role)
-    def setDataList(self, data): 
+    def setDataList(self, data):
         self.beginResetModel()
         self.data_list=data
         # Clear all photo caches on data refresh to pick up new/updated photos
-        self._photo_cache = {}
+        self._photo_cache = OrderedDict()
         self._photo_path_cache = {}
         self._loading_photos.clear()
         self.endResetModel()
@@ -561,6 +610,3 @@ class UserTableModel(QAbstractTableModel):
         self.beginResetModel()
         self.users = users
         self.endResetModel()
-
-
-
