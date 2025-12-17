@@ -51,6 +51,9 @@ pyinstaller --name EmployeeVault --onedir --noconfirm `
   --add-data ".\theme_preference.txt;." `
   ".\main.py"
 
+# Optional: include your PPTX ID template when present by adding:
+# --add-data ".\ID CUDDLY for STORES.pptx;." `
+
 $buildSuccess = $LASTEXITCODE -eq 0
 
 Write-Host ""

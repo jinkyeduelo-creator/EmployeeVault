@@ -131,6 +131,9 @@ class MainWindow(QMainWindow):
         # Set fixed window size
         self.setMinimumSize(1200, 600)
         self.resize(1200, 600)
+
+        # Centralized animation manager (theme-aware durations/easings)
+        self.anim_manager = get_animation_manager() if ANIMATIONS_AVAILABLE else None
         # Center the window properly
         screen = QApplication.primaryScreen().availableGeometry()
         self.move(
@@ -452,29 +455,37 @@ class MainWindow(QMainWindow):
 
         # Logo
         self.logo_label = QLabel()
+        self.logo_label.setObjectName("headerLogo")
         self.logo_label.setStyleSheet("background-color: transparent;")
+        logo_path = self._resolve_header_logo_path()
         try:
-            logo_pixmap = QPixmap(resource_path("company_logo.png"))
+            logo_pixmap = QPixmap(logo_path) if logo_path else QPixmap()
             if not logo_pixmap.isNull():
                 logo_pixmap = logo_pixmap.scaled(36, 36, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.logo_label.setPixmap(logo_pixmap)
+                self.logo_label.setToolTip("Cuddly International Corporation")
             else:
                 self.logo_label.setText("🏢")
                 self.logo_label.setStyleSheet("font-size: 24px; background-color: transparent;")
-        except Exception:
+        except Exception as e:
+            logging.warning(f"Could not load logo: {e}")
             self.logo_label.setText("🏢")
             self.logo_label.setStyleSheet("font-size: 24px; background-color: transparent;")
 
-        # v5.4: Add subtle glow effect to logo
+        # v5.4: Add subtle glow effect to logo + hover animation
         logo_glow = QGraphicsDropShadowEffect()
         logo_glow.setBlurRadius(12)
         logo_glow.setColor(QColor(255, 255, 255, 80))
         logo_glow.setOffset(0, 0)
         self.logo_label.setGraphicsEffect(logo_glow)
+        self.logo_label.installEventFilter(self)
+        self._logo_glow_effect = logo_glow
+        self._logo_glow_animation = QPropertyAnimation(logo_glow, b"blurRadius", self)
+        self._logo_glow_animation.setDuration(self.anim_manager.get_theme_duration("hover") if self.anim_manager else 180)
         center_layout.addWidget(self.logo_label, 0, Qt.AlignVCenter)
 
         # Company name - no background
-        self.company_label = QLabel("Cuddly International Corporation")
+        self.company_label = QLabel("CUDDLY INTERNATIONAL CORPORATION")
         self.company_label.setStyleSheet("""
             color: white;
             font-size: 16px;
@@ -3464,7 +3475,45 @@ class MainWindow(QMainWindow):
                     # Mouse left sidebar - collapse back
                     self._hover_collapse_sidebar()
                     return False
+        if obj == getattr(self, "logo_label", None) and hasattr(self, "_logo_glow_animation"):
+            if event.type() == QEvent.Type.Enter:
+                self._animate_logo_glow(18)
+            elif event.type() == QEvent.Type.Leave:
+                self._animate_logo_glow(12)
         return super().eventFilter(obj, event)
+
+    def _animate_logo_glow(self, target_blur: int):
+        """Animate the header logo glow on hover."""
+        try:
+            self._logo_glow_animation.stop()
+            current = self._logo_glow_effect.blurRadius()
+            self._logo_glow_animation.setStartValue(current)
+            self._logo_glow_animation.setEndValue(target_blur)
+            if self.anim_manager:
+                self._logo_glow_animation.setDuration(self.anim_manager.get_theme_duration("hover"))
+                self._logo_glow_animation.setEasingCurve(self.anim_manager.get_theme_easing())
+            self._logo_glow_animation.start()
+        except Exception as e:
+            logging.debug(f"Logo glow animation skipped: {e}")
+
+    def _resolve_header_logo_path(self) -> str:
+        """Find the best available header logo, prioritizing the provided Cuddly asset."""
+        candidates = [
+            resource_path(os.path.join("assets", "cuddly_logo.png")),
+            resource_path(os.path.join("assets", "cuddly_logo (1).png")),
+            resource_path("cuddly_logo.png"),
+            resource_path("company_logo.png"),
+            os.path.join("assets", "cuddly_logo.png"),
+            "cuddly_logo.png",
+            "company_logo.png",
+        ]
+        for path in candidates:
+            try:
+                if path and os.path.exists(path):
+                    return path
+            except Exception:
+                continue
+        return ""
 
     def _hover_expand_sidebar(self):
         """Option D: Temporarily expand sidebar on hover to show full text"""

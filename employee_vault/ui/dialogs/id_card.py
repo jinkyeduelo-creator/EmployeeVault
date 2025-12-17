@@ -3,10 +3,13 @@ ID Card Generator
 """
 
 import os
+import io
 import sqlite3
 import logging
+import zipfile
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
+from pathlib import Path
 
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
@@ -40,6 +43,9 @@ class IDCardGeneratorBackend:
         self.template_dir = template_dir
         self.card_size = (638, 1011)  # CR80 card size at 300 DPI - PORTRAIT (53.98mm x 85.6mm)
         self.secret_key = "EmployeeVault2024"  # For QR code security checksums
+        # Optional PPTX background template (e.g., "ID CUDDLY for STORES.pptx")
+        default_pptx = resource_path("ID CUDDLY for STORES.pptx")
+        self.pptx_template_path = default_pptx if os.path.exists(default_pptx) else ""
 
         # Ensure template directory exists
         os.makedirs(template_dir, exist_ok=True)
@@ -361,29 +367,45 @@ class IDCardGeneratorBackend:
         """
         from PIL import Image, ImageDraw
 
-        # Try to load the colorful background image
-        background_path = "id_card_background.png"
-        if os.path.exists(background_path):
-            try:
-                # Load and resize background to fit card size
-                background = Image.open(background_path).copy()
-                background = background.resize(self.card_size, Image.Resampling.LANCZOS)
-                card = background
-                logging.debug(f"Loaded colorful background from {background_path}")
-            except Exception as e:
-                logging.warning(f"Could not load background image: {e}, creating plain template")
-                card = self._create_plain_template(department)
-        else:
-            # Check for specific template file
-            template_path = os.path.join(self.template_dir, f"{template}.png")
-            
-            if os.path.exists(template_path):
-                # Load existing template
-                card = Image.open(template_path).copy()
-                logging.debug(f"Loaded template from {template_path}")
+        template_lower = (template or "").lower()
+        card = None
+
+        # Prefer PPTX background when provided/available
+        pptx_path = ""
+        if template_lower in {"pptx", "stores_pptx", "cuddly_pptx"}:
+            pptx_path = self.pptx_template_path
+        elif template_lower.endswith(".pptx"):
+            pptx_path = template
+        elif template_lower == "standard" and self.pptx_template_path:
+            pptx_path = self.pptx_template_path
+
+        if pptx_path and os.path.exists(pptx_path):
+            pptx_card = self._render_pptx_background(pptx_path)
+            if pptx_card:
+                card = pptx_card
+                logging.info(f"Loaded PPTX-based ID template from {pptx_path}")
             else:
-                # Create plain template
-                card = self._create_plain_template(department)
+                logging.warning(f"PPTX template found at {pptx_path} but could not render; falling back to PNG/plain template.")
+
+        if card is None:
+            # Try to load the colorful background image
+            background_path = "id_card_background.png"
+            if os.path.exists(background_path):
+                try:
+                    background = Image.open(background_path).copy()
+                    background = background.resize(self.card_size, Image.Resampling.LANCZOS)
+                    card = background
+                    logging.debug(f"Loaded colorful background from {background_path}")
+                except Exception as e:
+                    logging.warning(f"Could not load background image: {e}, creating plain template")
+                    card = self._create_plain_template(department)
+            else:
+                template_path = os.path.join(self.template_dir, f"{template}.png")
+                if os.path.exists(template_path):
+                    card = Image.open(template_path).copy()
+                    logging.debug(f"Loaded template from {template_path}")
+                else:
+                    card = self._create_plain_template(department)
 
         # Add colored header bar for department identification
         draw = ImageDraw.Draw(card)
@@ -403,6 +425,26 @@ class IDCardGeneratorBackend:
         card = Image.new('RGB', self.card_size, color='white')
         logging.debug(f"Created plain template")
         return card
+
+    def _render_pptx_background(self, pptx_path: str):
+        """Render the first/primary slide image from a PPTX as the ID background."""
+        try:
+            with zipfile.ZipFile(pptx_path, 'r') as zf:
+                media_files = [
+                    name for name in zf.namelist()
+                    if name.lower().startswith("ppt/media/") and name.lower().endswith((".png", ".jpg", ".jpeg"))
+                ]
+                if not media_files:
+                    return None
+                # Pick the largest media asset as the likely full-slide background
+                target = max(media_files, key=lambda n: zf.getinfo(n).file_size)
+                data = zf.read(target)
+                from PIL import Image
+                with Image.open(io.BytesIO(data)) as img:
+                    return img.convert("RGB").resize(self.card_size, Image.Resampling.LANCZOS)
+        except Exception as e:
+            logging.warning(f"Could not render PPTX background from {pptx_path}: {e}")
+        return None
 
     def _get_department_color(self, department: str) -> tuple:
         """
@@ -1758,4 +1800,3 @@ class IDCardGeneratorBackenderator(AnimatedDialogBase):
 # ============================================================================
 # BATCH PRINT DIALOG - Multiple Cards Per Page
 # ============================================================================
-

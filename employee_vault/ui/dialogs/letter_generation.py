@@ -6,6 +6,7 @@ import os
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+from pathlib import Path
 
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
@@ -250,6 +251,88 @@ _________________________________
         
         return content
 
+    def _build_letter_context(self, employee: dict, store_branch: str, company: str,
+                              supervisor_name: str, supervisor_title: str,
+                              letter_date: str, reason_text: str) -> Dict[str, str]:
+        """Construct placeholder context for templated DOC/DOCX exports."""
+        safe_name = employee.get('name', '').split(' (Employee ID')[0]
+        context = {
+            "[DATE]": datetime.now().strftime("%B %d, %Y"),
+            "[COMPANY_NAME]": company,
+            "[BRANCH_NAME]": store_branch,
+            "[STORE_BRANCH]": store_branch,
+            "[ADDRESS]": "",
+            "[EMPLOYEE_NAME]": safe_name,
+            "[EMPLOYEE_ID]": employee.get('emp_id', ''),
+            "[LETTER_DATE]": letter_date,
+            "[REASON]": reason_text,
+            "[SUPERVISOR_NAME]": supervisor_name,
+            "[SUPERVISOR_TITLE]": supervisor_title,
+        }
+        # Friendly aliases for brace-based templates
+        alias_context = {}
+        for key, value in context.items():
+            token = key.strip("[]")
+            alias_context[f"{{{{{token}}}}}"] = value  # {{TOKEN}}
+            alias_context[token] = value              # TOKEN
+        context.update(alias_context)
+        return context
+
+    def _find_letter_template_file(self) -> Optional[str]:
+        """Locate a DOCX/DOC template in assets/, preferring DOCX with 'cuddly' or 'letter'."""
+        assets_dir = resource_path("assets")
+        if not os.path.isdir(assets_dir):
+            return None
+
+        docx_files = []
+        doc_files = []
+        for entry in os.listdir(assets_dir):
+            lower = entry.lower()
+            full_path = os.path.join(assets_dir, entry)
+            if not os.path.isfile(full_path):
+                continue
+            if lower.endswith(".docx"):
+                docx_files.append(full_path)
+            elif lower.endswith(".doc"):
+                doc_files.append(full_path)
+
+        def _sort_key(path: str):
+            name = Path(path).name.lower()
+            score = 0
+            if "cuddly" in name:
+                score -= 2
+            if "letter" in name or "excuse" in name:
+                score -= 1
+            return score
+
+        docx_files = sorted(docx_files, key=_sort_key)
+        doc_files = sorted(doc_files, key=_sort_key)
+
+        if docx_files:
+            return docx_files[0]
+        if doc_files:
+            # We do not parse .doc directly, but surface it so users can convert to DOCX
+            return doc_files[0]
+        return None
+
+    def _replace_placeholders_in_doc(self, doc, context: Dict[str, str]):
+        """Replace placeholder tokens inside a docx Document (paragraphs + tables)."""
+        def replace_in_runs(runs):
+            for run in runs:
+                for key, value in context.items():
+                    if key in run.text:
+                        run.text = run.text.replace(key, value)
+
+        for paragraph in doc.paragraphs:
+            replace_in_runs(paragraph.runs)
+
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    replace_in_runs(cell.paragraphs[0].runs if cell.paragraphs else [])
+                    for para in cell.paragraphs:
+                        replace_in_runs(para.runs)
+
     def preview_letter(self):
         """Preview the generated letter with proper formatting"""
         try:
@@ -402,12 +485,39 @@ _________________________________
         filepath = os.path.join(LETTERS_DIR, filename_docx)
 
         try:
-            # Create Word document
             from docx import Document
             from docx.shared import Pt, Inches, RGBColor
             from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-            doc = Document()
+            employees = self.db.all_employees()
+            employee = next((e for e in employees if e['emp_id'] == emp_id), {"emp_id": emp_id, "name": ""})
+            store_branch_text = self.store_branch.line_edit.text().strip() or "Office"
+            company = self.company_name.line_edit.text().strip() or "INTERNATIONAL TOYWORLD INC."
+            supervisor_name = self.supervisor_name.line_edit.text().strip() or "[Supervisor Name]"
+            supervisor_title = self.supervisor_title.line_edit.text().strip() or "[Supervisor Title]"
+            letter_date = self._get_letter_date_string()
+            reason_text = self.reason_edit.line_edit.text().strip().title() or "Personal Reasons"
+
+            context = self._build_letter_context(
+                employee,
+                store_branch_text,
+                company,
+                supervisor_name,
+                supervisor_title,
+                letter_date,
+                reason_text,
+            )
+
+            template_path = self._find_letter_template_file()
+            template_ext = Path(template_path).suffix.lower() if template_path else ""
+            if template_ext == ".docx":
+                doc = Document(template_path)
+            else:
+                if template_ext == ".doc":
+                    logging.warning(
+                        f"Template {template_path} is .doc; please convert to .docx for placeholder support. Using generated body instead."
+                    )
+                doc = Document()
 
             # Set margins - more space for header and footer
             sections = doc.sections
@@ -546,6 +656,10 @@ _________________________________
                     run.font.color.rgb = RGBColor(96, 96, 96)
 
 
+            # Apply placeholder replacement when a DOCX template is present
+            if template_ext == ".docx":
+                self._replace_placeholders_in_doc(doc, context)
+
             # ==================== ADD LETTER BODY CONTENT ====================
             # Add the actual letter content to the document body
             lines = content.split('\n')
@@ -570,12 +684,11 @@ _________________________________
             doc.save(filepath)
 
             # Save to history
-            letter_date = self._get_letter_date_string()
             self.db.save_letter_history(
                 emp_id, "excuse", letter_date, None,
-                self.reason_edit.line_edit.text().strip().title(),  # Use .title() method
-                self.supervisor_name.line_edit.text().strip(),
-                self.supervisor_title.line_edit.text().strip(),
+                reason_text,
+                supervisor_name,
+                supervisor_title,
                 filepath, self.current_user
             )
 
@@ -592,5 +705,3 @@ _________________________________
 
         except Exception as e:
             show_error_toast(self, f"Failed to save letter:\n{str(e)}")
-
-

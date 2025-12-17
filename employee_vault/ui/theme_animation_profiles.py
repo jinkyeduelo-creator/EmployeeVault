@@ -397,7 +397,10 @@ THEME_ANIMATION_PROFILES = {
     "mint": MintThemeAnimation(),
     "simple": SimpleThemeAnimation(),
     "glassmorphism": GlassmorphismThemeAnimation(),
+    "glass_frost": GlassmorphismThemeAnimation(),
     "neumorphic": NeumorphicThemeAnimation(),
+    "warm_clay": SunsetThemeAnimation(),
+    "midnight_wave": MidnightThemeAnimation(),
 }
 
 
