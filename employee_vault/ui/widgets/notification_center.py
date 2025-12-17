@@ -471,29 +471,36 @@ class NotificationBell(QPushButton):
     
     def __init__(self, parent=None):
         super().__init__("🔔", parent)
-        self.setFixedSize(28, 28)  # Compact size for header
+        self.setFixedSize(36, 36)  # Slightly larger to prevent squishing
+        # Use emoji-friendly font with explicit color to avoid OS fallback glyphs
+        font = self.font()
+        font.setFamily("Segoe UI Emoji")
+        font.setPointSize(18)
+        self.setFont(font)
         self._count = 0
         self._setup_style()
-        
+
         # Badge - smaller to fit on smaller bell
         self.badge = NotificationBadge(self)
         self.badge.setFixedSize(16, 16)  # Smaller badge
-        self.badge.move(16, -2)  # Adjusted position for smaller bell
+        self.badge.move(18, -2)  # Adjusted position for larger bell
         self.badge.hide()
-        
+
     def _setup_style(self):
         self.setStyleSheet("""
             QPushButton {
                 background: transparent;
                 border: none;
+                color: white;
                 font-size: 18px;
+                padding: 0px;
             }
             QPushButton:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 14px;
+                background: rgba(255, 255, 255, 0.12);
+                border-radius: 18px;
             }
             QPushButton:pressed {
-                background: rgba(255, 255, 255, 0.05);
+                background: rgba(255, 255, 255, 0.08);
             }
         """)
         
