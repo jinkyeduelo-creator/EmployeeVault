@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropdown Styles Preview - Visual Comparison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #4a9eff, #9c27b0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 40px;
+        }
+
+        .option-card {
+            background: rgba(28, 28, 35, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .option-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(74, 158, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(74, 158, 255, 0.2);
+        }
+
+        .option-title {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #4a9eff;
+        }
+
+        .option-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 20px;
+        }
+
+        .dropdown-preview {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .dropdown-button {
+            width: 100%;
+            padding: 12px 16px;
+            background: transparent;
+            border: 2px solid rgba(74, 158, 255, 0.6);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-button:hover {
+            border-color: #4a9eff;
+        }
+
+        .dropdown-button::after {
+            content: '▼';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .dropdown-preview:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* OPTION 1: Glassmorphism */
+        .option1 .dropdown-menu {
+            background: rgba(28, 28, 35, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-top: 2px solid rgba(74, 158, 255, 0.5);
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .option1 .dropdown-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 2px 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option1 .dropdown-item:hover {
+            background: linear-gradient(90deg,
+                rgba(74, 158, 255, 0.15),
+                rgba(74, 158, 255, 0.25),
+                rgba(74, 158, 255, 0.15));
+            border-left: 3px solid rgba(74, 158, 255, 0.8);
+            padding-left: 13px;
+        }
+
+        /* OPTION 2: Neumorphic */
+        .option2 .dropdown-menu {
+            background: linear-gradient(180deg,
+                rgba(35, 35, 42, 0.98),
+                rgba(28, 28, 35, 0.98),
+                rgba(32, 32, 39, 0.98));
+            border: 2px solid rgba(74, 158, 255, 0.4);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow:
+                -5px -5px 15px rgba(45, 45, 52, 0.3),
+                5px 5px 20px rgba(10, 10, 15, 0.6);
+        }
+
+        .option2 .dropdown-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option2 .dropdown-item:hover {
+            background: linear-gradient(180deg,
+                rgba(45, 48, 55, 0.9),
+                rgba(35, 38, 45, 0.9));
+            border-left: 4px solid rgba(74, 158, 255, 0.7);
+            padding-left: 12px;
+        }
+
+        /* OPTION 3: Gradient Shimmer */
+        .option3 .dropdown-menu {
+            background: linear-gradient(135deg,
+                rgba(28, 28, 35, 0.95),
+                rgba(35, 40, 48, 0.95),
+                rgba(28, 28, 35, 0.95),
+                rgba(32, 36, 42, 0.95));
+            border: 3px solid transparent;
+            border-image: linear-gradient(135deg,
+                #4a9eff, #9c27b0, #00c8ff, #ff4081, #4a9eff) 1;
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 8px 32px rgba(74, 158, 255, 0.3);
+        }
+
+        .option3 .dropdown-item {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin: 2px 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option3 .dropdown-item:hover {
+            background: linear-gradient(90deg,
+                rgba(74, 158, 255, 0.2),
+                rgba(156, 39, 176, 0.3),
+                rgba(74, 158, 255, 0.2));
+            border-left: 3px solid #4a9eff;
+            padding-left: 11px;
+        }
+
+        /* OPTION 4: Dual Shadow */
+        .option4 .dropdown-menu {
+            background-color: #1c1c23;
+            border: 2px solid #4a9eff;
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow:
+                0 0 0 1px rgba(74, 158, 255, 0.2),
+                0 4px 6px rgba(0, 0, 0, 0.3),
+                0 10px 20px rgba(0, 0, 0, 0.25),
+                0 20px 40px rgba(74, 158, 255, 0.1);
+        }
+
+        .option4 .dropdown-item {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option4 .dropdown-item:hover {
+            background: rgba(74, 158, 255, 0.2);
+            border-left: 3px solid rgba(74, 158, 255, 0.8);
+            padding-left: 11px;
+        }
+
+        /* OPTION 5: Ripple Effect */
+        .option5 .dropdown-menu {
+            background: rgba(28, 28, 35, 0.9);
+            border: 2px solid rgba(74, 158, 255, 0.6);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .option5 .dropdown-item {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin: 3px 4px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+
+        .option5 .dropdown-item:hover {
+            background: radial-gradient(circle at center,
+                rgba(74, 158, 255, 0.4),
+                rgba(74, 158, 255, 0.2),
+                rgba(74, 158, 255, 0.05));
+            border: 1px solid rgba(74, 158, 255, 0.5);
+            transform: scale(1.02);
+        }
+
+        /* OPTION 6: Minimal */
+        .option6 .dropdown-menu {
+            background-color: #1c1c23;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 3px solid #4a9eff;
+            border-radius: 8px;
+            padding: 4px 4px 4px 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .option6 .dropdown-item {
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin: 1px 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option6 .dropdown-item:hover {
+            background: rgba(74, 158, 255, 0.15);
+            color: #4a9eff;
+        }
+
+        .features {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(74, 158, 255, 0.2);
+            border-radius: 12px;
+            font-size: 12px;
+            margin: 4px 4px 4px 0;
+            color: #4a9eff;
+        }
+
+        .recommended {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #4a9eff, #9c27b0);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+        }
+
+        .code-hint {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Courier New', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Dropdown Styles Preview</h1>
+        <p>Hover over each dropdown to see the effect. Choose your favorite!</p>
+    </div>
+
+    <div class="container">
+        <!-- OPTION 1: Glassmorphism -->
+        <div class="option-card option1">
+            <span class="recommended">★ RECOMMENDED</span>
+            <h2 class="option-title">Option 1: Glassmorphism</h2>
+            <p class="option-subtitle">Frosted glass effect with backdrop blur</p>
+
+            <div class="dropdown-preview">
+                <button class="dropdown-button">Select Department</button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item">Office</div>
+                    <div class="dropdown-item">Warehouse</div>
+                    <div class="dropdown-item">Store</div>
+                    <div class="dropdown-item">Manufacturing</div>
+                    <div class="dropdown-item">Sales</div>
+                </div>
+            </div>
+
+            <div class="features">
+                <span class="feature-tag">Modern</span>
+                <span class="feature-tag">macOS-like</span>
+                <span class="feature-tag">Premium Feel</span>
+            </div>
+
+            <div class="code-hint">
+                Use: OPTION_1_GLASSMORPHISM
+            </div>
+        </div>
+
+        <!-- OPTION 2: Neumorphic -->
+        <div class="option-card option2">
+            <h2 class="option-title">Option 2: Neumorphic Depth</h2>
+            <p class="option-subtitle">Subtle 3D extruded surface effect</p>
+
+            <div class="dropdown-preview">
+                <button class="dropdown-button">Select Department</button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item">Office</div>
+                    <div class="dropdown-item">Warehouse</div>
+                    <div class="dropdown-item">Store</div>
+                    <div class="dropdown-item">Manufacturing</div>
+                    <div class="dropdown-item">Sales</div>
+                </div>
+            </div>
+
+            <div class="features">
+                <span class="feature-tag">Subtle</span>
+                <span class="feature-tag">3D Effect</span>
+                <span class="feature-tag">Matches Fields</span>
+            </div>
+
+            <div class="code-hint">
+                Use: OPTION_2_NEUMORPHIC
+            </div>
+        </div>
+
+        <!-- OPTION 3: Gradient Shimmer -->
+        <div class="option-card option3">
+            <h2 class="option-title">Option 3: Gradient Shimmer</h2>
+            <p class="option-subtitle">Multi-color animated gradient border</p>
+
+            <div class="dropdown-preview">
+                <button class="dropdown-button">Select Department</button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item">Office</div>
+                    <div class="dropdown-item">Warehouse</div>
+                    <div class="dropdown-item">Store</div>
+                    <div class="dropdown-item">Manufacturing</div>
+                    <div class="dropdown-item">Sales</div>
+                </div>
+            </div>
+
+            <div class="features">
+                <span class="feature-tag">Colorful</span>
+                <span class="feature-tag">Eye-catching</span>
+                <span class="feature-tag">Dynamic</span>
+            </div>
+
+            <div class="code-hint">
+                Use: OPTION_3_GRADIENT_SHIMMER
+            </div>
+        </div>
+
+        <!-- OPTION 4: Dual Shadow -->
+        <div class="option-card option4">
+            <h2 class="option-title">Option 4: Dual-Layer Shadow</h2>
+            <p class="option-subtitle">Professional multi-layer shadow depth</p>
+
+            <div class="dropdown-preview">
+                <button class="dropdown-button">Select Department</button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item">Office</div>
+                    <div class="dropdown-item">Warehouse</div>
+                    <div class="dropdown-item">Store</div>
+                    <div class="dropdown-item">Manufacturing</div>
+                    <div class="dropdown-item">Sales</div>
+                </div>
+            </div>
+
+            <div class="features">
+                <span class="feature-tag">Professional</span>
+                <span class="feature-tag">Clean</span>
+                <span class="feature-tag">Business</span>
+            </div>
+
+            <div class="code-hint">
+                Use: OPTION_4_DUAL_SHADOW
+            </div>
+        </div>
+
+        <!-- OPTION 5: Ripple Effect -->
+        <div class="option-card option5">
+            <h2 class="option-title">Option 5: Ripple Effect</h2>
+            <p class="option-subtitle">Interactive radial gradient on hover</p>
+
+            <div class="dropdown-preview">
+                <button class="dropdown-button">Select Department</button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item">Office</div>
+                    <div class="dropdown-item">Warehouse</div>
+                    <div class="dropdown-item">Store</div>
+                    <div class="dropdown-item">Manufacturing</div>
+                    <div class="dropdown-item">Sales</div>
+                </div>
+            </div>
+
+            <div class="features">
+                <span class="feature-tag">Interactive</span>
+                <span class="feature-tag">Playful</span>
+                <span class="feature-tag">Material Design</span>
+            </div>
+
+            <div class="code-hint">
+                Use: OPTION_5_RIPPLE
+            </div>
+        </div>
+
+        <!-- OPTION 6: Minimal -->
+        <div class="option-card option6">
+            <h2 class="option-title">Option 6: Minimal Accent</h2>
+            <p class="option-subtitle">Clean design with left accent bar</p>
+
+            <div class="dropdown-preview">
+                <button class="dropdown-button">Select Department</button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-item">Office</div>
+                    <div class="dropdown-item">Warehouse</div>
+                    <div class="dropdown-item">Store</div>
+                    <div class="dropdown-item">Manufacturing</div>
+                    <div class="dropdown-item">Sales</div>
+                </div>
+            </div>
+
+            <div class="features">
+                <span class="feature-tag">Minimal</span>
+                <span class="feature-tag">Clean</span>
+                <span class="feature-tag">Distraction-free</span>
+            </div>
+
+            <div class="code-hint">
+                Use: OPTION_6_MINIMAL
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 60px; padding: 40px; background: rgba(28, 28, 35, 0.6); border-radius: 16px; max-width: 800px; margin-left: auto; margin-right: auto;">
+        <h2 style="color: #4a9eff; margin-bottom: 20px;">How to Apply</h2>
+        <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.8;">
+            1. Open <code style="color: #4a9eff;">dropdown_styles_samples.py</code><br>
+            2. Copy your chosen <code style="color: #4a9eff;">OPTION_X</code> variable<br>
+            3. Open <code style="color: #4a9eff;">employee_vault/ui/widgets/animated_input.py</code><br>
+            4. Find <code style="color: #4a9eff;">NeumorphicGradientComboBox.__init__()</code><br>
+            5. Replace the <code style="color: #4a9eff;">setStyleSheet("""...""")</code> content<br>
+            6. Save and restart EmployeeVault
+        </p>
+        <p style="color: rgba(74, 158, 255, 0.8); margin-top: 20px; font-size: 14px;">
+            💡 You can also mix and match! Take the popup style from one option and hover effects from another.
+        </p>
+    </div>
+
+    <script>
+        // Add click animation
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>

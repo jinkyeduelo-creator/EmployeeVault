@@ -1,0 +1,11 @@
+{
+  "dark_mode": false,
+  "auto_refresh": true,
+  "refresh_interval": 5,
+  "theme_color": "green",
+  "sync_with_windows_theme": true,
+  "enable_network_guard": false,
+  "enable_animated_background": true,
+  "animated_background_mode": "wave",
+  "animated_background_fps": 30
+}

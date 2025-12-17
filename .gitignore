@@ -1,0 +1,84 @@
+# =============================================================================
+# EmployeeVault - Git ignore (code-only repo)
+# Prevent committing databases, employee files/photos, logs, builds, and venvs.
+# =============================================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Virtualenvs ---
+.venv/
+venv/
+env/
+.venvn/
+
+# --- IDE / tooling ---
+.vscode/
+.idea/
+.claude/
+.claudeskills/
+
+# --- Build / packaging output ---
+build/
+dist/
+EmployeeVault/
+_internal/
+*.spec
+
+# --- App runtime / generated outputs ---
+logs/
+*.log
+server.lock
+audit_log.json
+
+# --- Local settings / preferences ---
+theme_preference.txt
+theme_mode_preference.txt
+
+# --- Employee data (NEVER COMMIT) ---
+employee_vault.db
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+backups/
+backup_now/
+employee_files/
+employee_photos/
+employee_letters/
+employee_export/
+cards_output/
+reports/
+
+# --- Temp / generated assets ---
+temp_pptx_extract/
+temp_card_preview_*.png
+test_cards_all/
+test_cards_it/
+test_cards_specific/
+.cache/
+*.tmp
+*.tmp.*
+*_BACKUP.py
+*.bak
+*.bak.py
+*.mp4
+
+# --- Sensitive local assets (do not push) ---
+ID CUDDLY for STORES.pptx
+assets/*.doc
+assets/*.docx
+assets/cuddly_logo.png
+assets/cuddly_logo (1).png
+employee_draft.json
+nul

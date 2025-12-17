@@ -1,0 +1,6 @@
+{
+    "network_db_path": "\\\\extra\\EmployeeVault\\employee_vault.db",
+    "network_enabled": true,
+    "fallback_to_local": true,
+    "_comment": "Change network_db_path to your network share location. Set network_enabled to false to use only local database."
+}

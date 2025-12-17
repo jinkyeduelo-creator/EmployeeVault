@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        /* A4 page size in print */
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+
+        /* Defines the size of a single ID card (standard CR80 size) */
+        .card-container {
+            width: 3.375in;
+            height: 2.125in;
+            position: relative; /* This is key for positioning */
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            float: left; /* Allows multiple cards on one page */
+            margin: 10px;
+            border: 1px solid #ccc; /* Helper for seeing card edge */
+        }
+
+        /* Front and Back of the card */
+        .card-front, .card-back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Common background */
+        .bg-image {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* ----- FRONT OF CARD ----- */
+
+        .front-logo {
+            position: absolute;
+            top: 0.1in;
+            left: 0.15in;
+            width: 1.2in;
+            z-index: 2;
+        }
+
+        .employee-photo {
+            position: absolute;
+            top: 0.45in;
+            left: 0.15in;
+            width: 1.2in;
+            height: 1.2in;
+            border: 2px solid #333;
+            background: #f0f0f0;
+            z-index: 2;
+            object-fit: cover; /* Ensures photo fills the box */
+        }
+
+        .employee-name {
+            position: absolute;
+            top: 0.6in;
+            left: 1.5in;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            z-index: 2;
+        }
+
+        .employee-position {
+            position: absolute;
+            top: 1.0in;
+            left: 1.5in;
+            font-size: 11px;
+            z-index: 2;
+        }
+
+        .id-number {
+            position: absolute;
+            top: 1.3in;
+            left: 1.5in;
+            font-size: 11px;
+            z-index: 2;
+        }
+
+        /* ----- BACK OF CARD ----- */
+        .back-logo {
+            position: absolute;
+            top: 0.1in;
+            left: 0.15in;
+            width: 0.8in;
+            z-index: 2;
+        }
+
+        .company-info {
+            position: absolute;
+            top: 0.1in;
+            left: 1.0in;
+            font-size: 6px;
+            line-height: 1.3;
+            z-index: 2;
+        }
+
+        .agency-info {
+            position: absolute;
+            top: 0.6in;
+            left: 1.0in;
+            font-size: 6px;
+            line-height: 1.3;
+            z-index: 2;
+        }
+
+        .emergency-contact {
+            position: absolute;
+            top: 1.1in;
+            left: 1.0in;
+            font-size: 7px;
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        .terms-box {
+            position: absolute;
+            top: 0.1in;
+            left: 2.1in;
+            width: 1.15in;
+            font-size: 5px;
+            line-height: 1.4;
+            text-align: justify;
+            z-index: 2;
+        }
+
+        .signature-block {
+            position: absolute;
+            bottom: 0.1in;
+            left: 0.15in;
+            width: 1.8in;
+            z-index: 2;
+        }
+
+        .signature-img {
+            width: 1in;
+            height: 0.3in;
+        }
+
+        .signature-line {
+            border-top: 1px solid #000;
+            font-size: 7px;
+            font-weight: bold;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div class="card-container">
+        <div class="card-front">
+            <img src="file:///{{BG_PATH}}" class="bg-image">
+
+            <img src="file:///{{LOGO_PATH}}" class="front-logo">
+            
+            <img src="file:///{{PHOTO_PATH}}" class="employee-photo">
+
+            <div class="employee-name">{{NAME}}</div>
+            <div class="employee-position">{{POSITION}}</div>
+            <div class="id-number"><b>ID No.</b> {{ID_NUMBER}}</div>
+        </div>
+    </div>
+
+    <div class="card-container">
+        <div class="card-back">
+            <img src="file:///{{BG_PATH}}" class="bg-image">
+
+            <img src="file:///{{LOGO_PATH}}" class="back-logo">
+            
+            <div class="company-info">
+                <b>CUDDLY INTERNATIONAL CORPORATION</b><br>
+                #650 Jesus Ext. cor. Beata, Pandacan, Manila<br>
+                Tel. Nos. 588-0324 to 25 / Fax No. 588-0327<br>
+                #18 Apo St. Marikina Village, Nangka, Marikina City
+            </div>
+
+            <div class="agency-info">
+                <b>Agency:</b> {{AGENCY_NAME}}<br>
+                {{AGENCY_ADDRESS}}
+            </div>
+
+            <div class="emergency-contact">
+                <b>IN CASE OF EMERGENCY, PLEASE NOTIFY:</b><br>
+                {{EMERGENCY_NAME}} ({{EMERGENCY_PHONE}})
+            </div>
+
+            <div class="terms-box">
+                This card is issued by CUDDLY INTERNATIONAL CORPORATION for proper identification of cardholder designated hereon and would serve for any and all legal intents and purposes. Any sign of tampering / erasure will render this card null and void. Cardholder shall be held liable for misuse of this card. This card shall be surrendered upon separation from service.
+                <br><b>ID Validity:</b> {{VALIDITY}}
+            </div>
+
+            <div class="signature-block">
+                <img src="file:///{{SIGNATURE_PATH}}" class="signature-img">
+                <div class="signature-line">
+                    Ms. Rebecca Ongtangco<br>
+                    AUTHORIZED SIGNATURE
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
